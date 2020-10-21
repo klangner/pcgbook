@@ -1,5 +1,6 @@
 using Random
 
+include("dijkstra.jl")
 
 # -------------------------------------------------------------------------------------------------
 # Content representation
@@ -25,8 +26,8 @@ julia> m = Map(2, 3, [1,2]);
 """
 function Map(width::Int, height::Int, genotype::Array{Int, 1})
     tiles = bitrand(width, height)
-    starting_point = CartesianIndex(1, height)
-    exit_point = CartesianIndex(width, 1)
+    starting_point = CartesianIndex(1, 1)
+    exit_point = CartesianIndex(width, height)
     tiles[starting_point] = true
     tiles[exit_point] = true
     Map(genotype, tiles, starting_point, exit_point)
@@ -38,14 +39,6 @@ end
 
 function height(map::Map)
     size(map.tiles)[2]
-end
-
-function tiles(m::Map)
-    m.tiles
-end
-
-function genotype(m::Map)
-    m.genotype
 end
 
 
@@ -63,7 +56,13 @@ The evaluate score is based on the length of the shortest path between starting 
 If path doesn't exist then the score is equal to 0
 """
 function evaluate(m::Map)
-    0
+    dm = dijkstra_map(m.tiles, m.starting_point)
+    dist = dm[m.exit_point]
+    if dist < size(dm)[1] * size(dm)[2]
+        dist
+    else
+        0
+    end
 end
 
 # -------------------------------------------------------------------------------------------------
@@ -74,17 +73,19 @@ using Makie
 Makie.AbstractPlotting.inline!(true)
 
 
-function render(map::Map)
-    scene = Scene(resolution = (width(map)*10, height(map)*10))
-    heatmap!(scene, tiles(map), colormap = :grays, show_axis = false, backgroundcolor = :black)
+function render(tiles::BitArray{2})
+    scale = 700 / max(size(tiles)[1], size(tiles)[2]) 
+    scene = Scene(resolution = size(tiles) .* scale)
+    heatmap!(scene, tiles, colormap = :grays, show_axis = false, backgroundcolor = :black)
 end
 
 
 function test()
-    m = Map(64, 64, [1,2])
+    m = Map(8, 8, [1,2])
     fitness = evaluate(m)
     println("Fitness: ", fitness)
-    render(m)
+    dm = dijkstra_map(m.tiles, m.starting_point)
+    render(m.tiles)
 end
 
 test()
