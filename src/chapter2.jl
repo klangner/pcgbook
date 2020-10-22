@@ -100,10 +100,12 @@ If path doesn't exist then the score is equal to 0
 function evaluate(m::Map)
     dm = dijkstra_map(m.tiles, m.starting_point)
     dist = dm[m.exit_point]
-    if dist < size(dm)[1] * size(dm)[2]
-        dist
+    max_distance = size(dm)[1] * size(dm)[2]
+    if dist < max_distance
+        dist + max_distance
     else
-        0
+        dm[dm.>=max_distance] .= 0
+        maximum(dm)
     end
 end
 
