@@ -7,30 +7,29 @@ include("dijkstra.jl")
 # -------------------------------------------------------------------------------------------------
 
 struct Map 
-    genotype::Array{Int, 1}
     tiles::BitArray{2}
     starting_point::CartesianIndex{2}
     exit_point::CartesianIndex{2}
 end
 
 """
-    Map(w, h, g)
+    Map(w, h)
 
 Create new random map. Add starting point in the upper left corner
 end exit point int he lower right.
 
 # Examples
 ```julia-repl
-julia> m = Map(2, 3, [1,2]);
+julia> m = Map(2, 3);
 ```
 """
-function Map(width::Int, height::Int, genotype::Array{Int, 1})
+function Map(width::Int, height::Int)
     tiles = bitrand(width, height)
     starting_point = CartesianIndex(1, 1)
     exit_point = CartesianIndex(width, height)
     tiles[starting_point] = true
     tiles[exit_point] = true
-    Map(genotype, tiles, starting_point, exit_point)
+    Map(tiles, starting_point, exit_point)
 end
 
 function width(map::Map)
@@ -45,6 +44,30 @@ end
 # -------------------------------------------------------------------------------------------------
 # Search algorithm
 # -------------------------------------------------------------------------------------------------
+
+function simulate(μ, λ, num_epoch, mut_prob)
+    # Generate μ + λ maps
+    population = Array{Map,1}(undef,μ+λ)
+    fitness = Array{Int,1}(undef,μ+λ)
+    for i in 1:μ
+        population[i] = Map(8, 8)
+        fitness[i] = evaluate(population[i])
+    end
+    
+    for n in 1:num_epoch
+        # Generate λ new offspring based on the best so far
+        for i in 1:λ
+            population[μ+i] = Map(8, 8)
+            fitness[μ+i] = evaluate(population[μ+i])
+        end
+        # Sort by fitness score
+        indices = sortperm(fitness, rev=true)
+        population = population[indices]
+        fitness = fitness[indices]
+    end
+
+    population[1]
+end
 
 
 # -------------------------------------------------------------------------------------------------
@@ -81,10 +104,9 @@ end
 
 
 function test()
-    m = Map(8, 8, [1,2])
+    m = simulate(100, 100, 1_000, 0.05)
     fitness = evaluate(m)
     println("Fitness: ", fitness)
-    dm = dijkstra_map(m.tiles, m.starting_point)
     render(m.tiles)
 end
 
