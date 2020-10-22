@@ -54,12 +54,12 @@ end
 # Search algorithm
 # -------------------------------------------------------------------------------------------------
 
-function simulate(μ, λ, num_epoch, mut_prob)
+function simulate(μ, λ, num_epoch, mut_prob, map_size)
     # Generate μ + λ maps
     population = Array{Map,1}(undef,μ+λ)
     fitness = Array{Int,1}(undef,μ+λ)
     for i in 1:μ
-        population[i] = Map(8, 8)
+        population[i] = Map(map_size, map_size)
         fitness[i] = evaluate(population[i])
     end
     
@@ -69,8 +69,8 @@ function simulate(μ, λ, num_epoch, mut_prob)
             parent_map = population[rand(1:μ)]
             tiles = copy(parent_map.tiles)
             # Mutate tiles
-            for i in 1:8
-                for j in 1:8
+            for i in 1:map_size
+                for j in 1:map_size
                     if rand() <= mut_prob
                         tiles[i,j] = !tiles[i,j]
                     end
@@ -123,21 +123,20 @@ function render(tiles::BitArray{2})
 end
 
 
-function test()
-    num_simulation = 100
+function run_sim(;num_simulations=10, map_size=8)
     num_epoch = 1_000
     prob_mutation = 0.05
     μ = 100
     λ = 100
 
-    best_score = Array{Int,1}(undef,num_simulation)
+    best_score = Array{Int,1}(undef,num_simulations)
     sample_map = undef
-    for i in 1:num_simulation
-        sample_map = simulate(μ, λ, num_epoch, prob_mutation)
+    for i in 1:num_simulations
+        sample_map = simulate(μ, λ, num_epoch, prob_mutation, map_size)
         best_score[i] = evaluate(sample_map)
     end
     println("Mean score: ", mean(best_score))
     render(sample_map.tiles)
 end
 
-test()
+run_sim(num_simulations=1, map_size=16)
