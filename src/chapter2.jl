@@ -32,6 +32,15 @@ function Map(width::Int, height::Int)
     Map(tiles, starting_point, exit_point)
 end
 
+function Map(tiles::BitArray{2})
+    starting_point = CartesianIndex(1, 1)
+    dims = size(tiles)
+    exit_point = CartesianIndex(dims[1], dims[2])
+    tiles[starting_point] = true
+    tiles[exit_point] = true
+    Map(tiles, starting_point, exit_point)
+end
+
 function width(map::Map)
     size(map.tiles)[1]
 end
@@ -57,7 +66,17 @@ function simulate(μ, λ, num_epoch, mut_prob)
     for n in 1:num_epoch
         # Generate λ new offspring based on the best so far
         for i in 1:λ
-            population[μ+i] = Map(8, 8)
+            parent_map = population[rand(1:μ)]
+            tiles = copy(parent_map.tiles)
+            # Mutate tiles
+            for i in 1:8
+                for j in 1:8
+                    if rand() <= mut_prob
+                        tiles[i,j] = !tiles[i,j]
+                    end
+                end
+            end
+            population[μ+i] = Map(tiles)
             fitness[μ+i] = evaluate(population[μ+i])
         end
         # Sort by fitness score
@@ -92,6 +111,7 @@ end
 # Visualization
 # -------------------------------------------------------------------------------------------------
 
+using Statistics
 using Makie
 Makie.AbstractPlotting.inline!(true)
 
@@ -104,10 +124,20 @@ end
 
 
 function test()
-    m = simulate(100, 100, 1_000, 0.05)
-    fitness = evaluate(m)
-    println("Fitness: ", fitness)
-    render(m.tiles)
+    num_simulation = 100
+    num_epoch = 1_000
+    prob_mutation = 0.05
+    μ = 100
+    λ = 100
+
+    best_score = Array{Int,1}(undef,num_simulation)
+    sample_map = undef
+    for i in 1:num_simulation
+        sample_map = simulate(μ, λ, num_epoch, prob_mutation)
+        best_score[i] = evaluate(sample_map)
+    end
+    println("Mean score: ", mean(best_score))
+    render(sample_map.tiles)
 end
 
 test()
